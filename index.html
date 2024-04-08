@@ -24,7 +24,7 @@
   <script>
     async function fetchOptionChain() {
       try {
-        const response = await fetch('https://msurajhuro.github.io/api/OptionChain/');
+        const response = await fetch('https://msurajhuro.github.io/OptionChain/api/option-chain');
         const data = await response.json();
         displayOptionChain(data);
       } catch (error) {
