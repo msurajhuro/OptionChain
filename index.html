@@ -2,24 +2,38 @@
 <html>
 <head>
   <title>Live Option Chain</title>
+</head>
+<body>
+  <h1>Live Option Chain</h1>
+  <button onclick="fetchOptionChain()">Fetch Option Chain</button>
+  <table id="optionChainTable">
+    <thead>
+      <tr>
+        <th>Strike Price</th>
+        <th>CE Open Interest</th>
+        <th>CE Last Price</th>
+        <th>PE Open Interest</th>
+        <th>PE Last Price</th>
+      </tr>
+    </thead>
+    <tbody id="optionChainBody">
+      <!-- Option chain data will be displayed here -->
+    </tbody>
+  </table>
+
   <script>
-    function fetchOptionChain() {
-      const nseURL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY";
-      
-      fetch(nseURL)
-        .then(response => response.json())
-        .then(data => {
-          const optionChainData = data.records;
-          displayOptionChain(optionChainData);
-        })
-        .catch(error => {
-          console.error('Error fetching option chain:', error);
-        });
+    async function fetchOptionChain() {
+      try {
+        const response = await fetch('http://localhost:3000/api/option-chain');
+        const data = await response.json();
+        displayOptionChain(data);
+      } catch (error) {
+        console.error('Error fetching option chain:', error);
+      }
     }
 
     function displayOptionChain(optionChainData) {
-      const table = document.getElementById('optionChainTable');
-      const tbody = table.querySelector('tbody');
+      const tbody = document.getElementById('optionChainBody');
       tbody.innerHTML = ''; // Clear previous data
       
       optionChainData.forEach(record => {
@@ -35,23 +49,5 @@
       });
     }
   </script>
-</head>
-<body>
-  <h1>Live Option Chain</h1>
-  <button onclick="fetchOptionChain()">Fetch Option Chain</button>
-  <table id="optionChainTable">
-    <thead>
-      <tr>
-        <th>Strike Price</th>
-        <th>CE Open Interest</th>
-        <th>CE Last Price</th>
-        <th>PE Open Interest</th>
-        <th>PE Last Price</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Option chain data will be displayed here -->
-    </tbody>
-  </table>
 </body>
 </html>
