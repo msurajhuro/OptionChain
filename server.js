@@ -5,7 +5,7 @@ const app = express();
 
 app.use(cors());
 
-app.get('/', async (req, res) => {
+app.get('/api', async (req, res) => {
     try {
         const nseURL = "https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY";
         const response = await fetch(nseURL);
