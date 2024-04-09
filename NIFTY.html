@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Index Options</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    label {
+        display: block;
+        margin-bottom: 10px;
+    }
+    select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>NSE Index Options</h1>
+        <label for="expirySelect">Select expiry date:</label>
+        <select id="expirySelect"></select>
+        <div id="optionChainTable"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            const expirySelect = $('#expirySelect');
+            const optionChainTable = $('#optionChainTable');
+
+            // Fetch data from NSE API
+            $.ajax({
+                url: 'https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY',
+                dataType: 'json',
+                success: function(response) {
+                    const expiryDates = response.records.expiryDates;
+                    expirySelect.empty();
+                    expiryDates.forEach(expiry => {
+                        expirySelect.append(`<option value="${expiry}">${expiry}</option>`);
+                    });
+
+                    // Initial display based on first expiry date
+                    const initialExpiry = expiryDates[0];
+                    displayOptionChain(response.records.data, initialExpiry);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching data:', error);
+                }
+            });
+
+            expirySelect.change(() => {
+                const selectedExpiry = expirySelect.val();
+                $.ajax({
+                    url: 'https://www.nseindia.com/api/option-chain-indices?symbol=NIFTY',
+                    dataType: 'json',
+                    success: function(response) {
+                        const optionChainData = response.records.data;
+                        displayOptionChain(optionChainData, selectedExpiry);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                    }
+                });
+            });
+
+            function displayOptionChain(data, selectedExpiry) {
+                const filteredData = data.filter(item => item.expiryDate === selectedExpiry && item.PE.totalTradedVolume > 100 && (item.PE.strikePrice > item.PE.underlyingValue -500  && item.PE.strikePrice < item.PE.underlyingValue +500  ));
+
+                const table = $('<table>');
+                const headers = ['Strike Price', 'PE Total Traded Volume', 'PE Last Price', 'PE Price Difference', 'CE Total Traded Volume', 'CE Last Price', 'CE Price Difference'];
+                const headerRow = $('<tr>');
+                headers.forEach(header => {
+                    headerRow.append(`<th>${header}</th>`);
+                });
+                table.append(headerRow);
+
+                filteredData.forEach((rowData, index) => {
+                    const peData = rowData.PE;
+                    const ceData = rowData.CE;
+
+                    if (peData.totalTradedVolume > 100 && ceData.totalTradedVolume > 100) {
+                        const nextPeData = filteredData[index + 1]?.PE || 0;
+                        const nextCeData = filteredData[index + 1]?.CE || 0;
+
+                        const pePriceDifference = (nextPeData.lastPrice - peData.lastPrice).toFixed(2);
+                        const cePriceDifference = (nextCeData.lastPrice - ceData.lastPrice).toFixed(2);
+
+                        const row = $('<tr>');
+                        row.append(`<td>${peData.strikePrice}</td>`);
+                        row.append(`<td>${peData.totalTradedVolume}</td>`);
+                        row.append(`<td>${peData.lastPrice}</td>`);
+                        row.append(`<td>${pePriceDifference}</td>`);
+                        row.append(`<td>${ceData.totalTradedVolume}</td>`);
+                        row.append(`<td>${ceData.lastPrice}</td>`);
+                        row.append(`<td>${cePriceDifference}</td>`);
+                        table.append(row);
+                    }
+                });
+
+                optionChainTable.empty();
+                optionChainTable.append(table);
+            }
+        });
+    </script>
+</body>
+</html>
